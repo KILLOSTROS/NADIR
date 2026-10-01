@@ -1,4 +1,4 @@
-# Hlubinný protokol
+# NADIR
 
 Textová psychologická sci-fi/hororová adventura běžící v konzoli, inspirovaná atmosférou her jako *SOMA* a *Amnesia* s rozhodovací mechanikou ve stylu *Telltale*.
 
