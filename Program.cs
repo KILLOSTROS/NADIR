@@ -3,24 +3,63 @@ using System.Threading;
 
 namespace HlubinnyProtokol
 {
+    public class Hrac
+    {
+        public string Identifikator { get; set; }
+        public bool ViZeJeRobot { get; set; }
+        public bool ViktorVeri { get; set; }
+        public bool MaSvetlici { get; set; }
+        public bool GeneratorSpusten { get; set; }
+        public DateTime CasStartu { get; set; }
+        public int MaxSekundy { get; set; }
+
+        public Hrac(string id, int limitSekund)
+        {
+            Identifikator = id;
+            ViZeJeRobot = false;
+            ViktorVeri = false;
+            MaSvetlici = true;
+            GeneratorSpusten = false;
+            CasStartu = DateTime.Now;
+            MaxSekundy = limitSekund;
+        }
+
+        public void UberCas(int sekundy)
+        {
+            CasStartu = CasStartu.AddSeconds(-sekundy);
+        }
+
+        public void VykresliStatus()
+        {
+            int zbyva = MaxSekundy - (int)(DateTime.Now - CasStartu).TotalSeconds;
+            if (zbyva < 0) zbyva = 0;
+
+            int carky = Math.Max(0, zbyva / 15);
+
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write($"[POSTAVA: {Identifikator} | INTEGRITA: ");
+            for (int i = 0; i < carky; i++) Console.Write("#");
+            for (int i = carky; i < 16; i++) Console.Write("-");
+            Console.WriteLine($" | ZBYVA: {zbyva}s]");
+            Console.ResetColor();
+            Console.WriteLine(new string('=', 65));
+        }
+
+        public bool VyprselCas()
+        {
+            return (DateTime.Now - CasStartu).TotalSeconds >= MaxSekundy;
+        }
+    }
+
     class Program
     {
-        static DateTime casStartu;
-        static int maxSekundy = 240; // 4 minuty celkový časový limit
-
         static void Main(string[] args)
         {
-            casStartu = DateTime.Now;
-
+            Hrac hrac = new Hrac("Subjekt-04", 240);
             int volba = 0;
-            bool viZeJeRobot = false;
-            bool viktorVeri = false;
-            bool maSvetlici = true;
-            bool generatorSpusten = false;
 
             Console.Clear();
 
-            // --- ASCII UVOD ---
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(@"
   _   _    _    ____ ___ ____  
@@ -37,13 +76,11 @@ namespace HlubinnyProtokol
             Pis("[VAROVANI: Tlakova prepazka sektoru 07 byla prolomena]");
             Pis("[ZACINA ODPOČET DO IMPLOZE CELÉHO KOMPLEXU]");
             Console.ResetColor();
-            Cekej(2500);
+            Thread.Sleep(2500);
 
-            // ==========================================
-            // --- 1. SITUACE: PROBUZENÍ A ZTRÁTA PAMĚTI ---
-            // ==========================================
+            // 1. cast
             Console.Clear();
-            VykresliStatus();
+            hrac.VykresliStatus();
             Pis("Proberes se na dne servisni komory. Kolem nohou ti proudi ledova cerna voda.");
             Pis("V odrazu rozbite obrazovky vidis misto sve tvare jen zlutou diodu tezke helmy.");
             Pis("Kov kolem tebe stona pod gigantickym tlakem oceanu.");
@@ -61,12 +98,12 @@ namespace HlubinnyProtokol
             Console.Write("\nTvoje volba (1-3): ");
             int.TryParse(Console.ReadLine(), out volba);
 
-            if (ZkontrolujCas()) return;
+            if (ZkontrolujKonecCasu(hrac)) return;
 
             Console.Clear();
             if (volba == 1)
             {
-                viZeJeRobot = true;
+                hrac.ViZeJeRobot = true;
                 Console.ForegroundColor = ConsoleColor.DarkGray;
                 Pis("[DIAGNOSTIKA: Organicky subjekt 04 - STAV: MRTEV (pred 14 dny)]");
                 Pis("[PROCESOR: Emulace lidskeho vedomi bezi na 87 % kapacity]");
@@ -78,7 +115,7 @@ namespace HlubinnyProtokol
             }
             else if (volba == 2)
             {
-                viktorVeri = true;
+                hrac.ViktorVeri = true;
                 Pis("Zapinas komunikator: 'Tady jsem. Jdu k hlavnimu koridoru.'");
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Pis("Viktor: 'Diky bohu! Uz jsem myslel, ze jsem tu zustal uplne sam.'");
@@ -91,14 +128,12 @@ namespace HlubinnyProtokol
                 Pis("Viktor: 'Co to delas?! Slysel jsem zamek! Neodrezavej me!'");
                 Console.ResetColor();
             }
-            Cekej(3000);
+            Thread.Sleep(3000);
 
-            // ==========================================
-            // --- 2. SITUACE: KÓD OD NOUZOVÝCH DVEŘÍ ---
-            // ==========================================
+            // 2. cast
             Console.Clear();
-            VykresliStatus();
-            Pis("Vybíhas do spojovaci chodby. Cestu do dalsi sekce ale blokuji masivni ocelova vrata.");
+            hrac.VykresliStatus();
+            Pis("Vybihas do spojovaci chodby. Cestu do dalsi sekce ale blokuji masivni ocelova vrata.");
             Pis("Konzole hlasi: 'ZADEJTE 4-MISTNY PRISTUPOVY KOD DOHLIZITELE'.");
             Pis("Vedle lezi mrtvy technik s odznakem 'Dr. Vance' a jeho osobni zapisnik.");
             Pis("V zapisniku je text: 'Kdybych zapomnel kod k sektoru B: Je to rok narozeni me dcery (1994).'");
@@ -106,7 +141,7 @@ namespace HlubinnyProtokol
             Console.Write("\nZadej pristupovy kod z terminalu: ");
             string kod = Console.ReadLine();
 
-            if (ZkontrolujCas()) return;
+            if (ZkontrolujKonecCasu(hrac)) return;
 
             Console.Clear();
             if (kod == "1994")
@@ -122,15 +157,13 @@ namespace HlubinnyProtokol
                 Pis("[CHYBNY KOD - SPUSTEN NOUZOVY BYPASS (Zdrzeni 25 sekund)]");
                 Console.ResetColor();
                 Pis("Musel jsi rucne vypacit prevodovku, coz te stalo drahocenny cas a silu!");
-                casStartu = casStartu.AddSeconds(-25); // Trest: ubyde čas
+                hrac.UberCas(25);
             }
-            Cekej(3000);
+            Thread.Sleep(3000);
 
-            // ==========================================
-            // --- 3. SITUACE: GENERÁTOROVNA A NAPÁJENÍ ---
-            // ==========================================
+            // 3. cast
             Console.Clear();
-            VykresliStatus();
+            hrac.VykresliStatus();
             Pis("Dostavas se k rozvodi energie pro hangary. Voda uz ti saha po kolena.");
             Pis("Hlavni svetla zhasla. Aby se otevrel vytah ke kapslim, potrebujes stavu.");
             Pis("Na rozvodne desce jsou tri paky a varovny stitek: 'PREPETI ODPALI REAKTOR'.");
@@ -143,36 +176,34 @@ namespace HlubinnyProtokol
             Console.Write("\nTvoje volba (1-3): ");
             int.TryParse(Console.ReadLine(), out volba);
 
-            if (ZkontrolujCas()) return;
+            if (ZkontrolujKonecCasu(hrac)) return;
 
             Console.Clear();
             if (volba == 1)
             {
-                generatorSpusten = true;
+                hrac.GeneratorSpusten = true;
                 Pis("Pomalu zapinas zalozni clanky. Svetla zablikaji a stabilizuji se na nouzove cervene.");
                 Pis("Vytah se rozjel.");
             }
             else if (volba == 2)
             {
-                generatorSpusten = true;
+                hrac.GeneratorSpusten = true;
                 Console.ForegroundColor = ConsoleColor.Red;
                 Pis("Jiskry letaji po cele mistnosti! Transformator hvizdi.");
                 Console.ResetColor();
-                Pis("Energie naskocila okamzite, ale exploze kabelu ti popalila senzory.");
+                Pis("Energie naskocila okamzite, ale exploze kabelu ti poskodila cast senzoru.");
             }
             else
             {
-                Pis("Zkousis pacit dvere sachty hrubou silou tveho robotickeho tela.");
-                Pis("Kov se ohyba, ale ztratil jsi drahocenne minuty!");
-                casStartu = casStartu.AddSeconds(-30);
+                Pis("Zkousis pacit dvere sachty hrubou silou tveho mechanickeho tela.");
+                Pis("Kov se ohyba, ale ztratil jsi drahocenne sekundy!");
+                hrac.UberCas(30);
             }
-            Cekej(3000);
+            Thread.Sleep(3000);
 
-            // ==========================================
-            // --- 4. SITUACE: TVAROVAČ V CHODBĚ ---
-            // ==========================================
+            // 4. cast
             Console.Clear();
-            VykresliStatus();
+            hrac.VykresliStatus();
             Pis("Pred dvermi do hangaru narazis na Viktora. Je bledy, trese se a v ruce ma svetlici.");
             Pis("Mezi vami a unikovou komorou stoji Tvarovac — hruzna masa bio-gelu a lidskych těl.");
             Pis("Tato mutace je slepa, ale reaguje na sebemensi zvuk kroků a teplo.");
@@ -185,43 +216,40 @@ namespace HlubinnyProtokol
             Console.Write("\nTvoje volba (1-3): ");
             int.TryParse(Console.ReadLine(), out volba);
 
-            if (ZkontrolujCas()) return;
+            if (ZkontrolujKonecCasu(hrac)) return;
 
             Console.Clear();
             if (volba == 1)
             {
                 Pis("Vypinas vsechny systemy. Jdete krok po kroku ledovou vodou.");
-                if (viktorVeri)
+                if (hrac.ViktorVeri)
                 {
-                    Pis("Viktor te drzi za rameno, snazi se ani nedyychat. Proklouzli jste tesne vedle obludy.");
+                    Pis("Viktor te drzi za rameno a prosli jste v tichosti tesne vedle obludy.");
                 }
                 else
                 {
-                    Pis("Viktor v panice slapl na uvolneny plech! Monstrum zarvalo a seklo ho do ramene.");
-                    Pis("Na posledni chvili jste vbehli do prechodove komory a zavreli dvere.");
+                    Pis("Viktor v panice slapl na plech! Monstrum zarvalo, ale stihli jste vbehnout do vrat.");
                 }
             }
             else if (volba == 2)
             {
-                maSvetlici = false;
+                hrac.MaSvetlici = false;
                 Pis("Skrtas svetlici a hazes ji daleko do vetraci sachty.");
-                Pis("Tvarovac zbesile vystartuje za rudym zarem. Cesta je cista, ale sachta zacala horet.");
+                Pis("Tvarovac zbesile vystartuje za rudym svetlem. Cesta je volna.");
             }
             else
             {
-                Pis("Nastavil jsi vysilacku na maximum a hodil ji do rohu.");
-                Pis("Monstrum ji rozdrtilo na prach. Ziskali jste cas, ale ztratili jste spojeni s povrchem.");
+                Pis("Nastavil jsi vysilacku na maximum a odhodil ji do rohu.");
+                Pis("Monstrum ji rozdrtilo. Ziskali jste cas, ale ztratili spojeni s povrchem.");
             }
-            Cekej(3000);
+            Thread.Sleep(3000);
 
-            // ==========================================
-            // --- 5. FINÁLNÍ DILEMA: ÚNIKOVÁ KAPSLE ---
-            // ==========================================
+            // 5. cast
             Console.Clear();
-            VykresliStatus();
+            hrac.VykresliStatus();
             Pis("Stojite u posledni funkcni zachranne kapsle. Steny kolem praskaji pod tlakem 800 baru.");
             Pis("Displej kapsle blika cervene: 'VAROVANI: TLAKOVY KATAPULT UNESE POUZE 1 OSOBU'.");
-            Pis("Viktor si vsimne poskozeneho plastu na tve pazi — vidi draty a titanovy skelet.");
+            Pis("Viktor si vsimne poskozeneho krytu na tve pazi — vidi draty a titanovy skelet.");
             
             Console.ForegroundColor = ConsoleColor.Yellow;
             Pis("Viktor: 'Ty... ty nejsi clovek! Ty jsi jenom zatraceny stroj!'");
@@ -236,11 +264,10 @@ namespace HlubinnyProtokol
             Console.Write("\nTvoje volba (1-3): ");
             int.TryParse(Console.ReadLine(), out volba);
 
-            if (ZkontrolujCas()) return;
+            if (ZkontrolujKonecCasu(hrac)) return;
 
             Console.Clear();
 
-            // --- VYHODNOCENÍ KONCŮ ---
             if (volba == 1)
             {
                 Console.ForegroundColor = ConsoleColor.Cyan;
@@ -249,7 +276,7 @@ namespace HlubinnyProtokol
                 Pis("Zaviras za Viktorem hermeticky poklop. Pres sklo vidis jeho sok a slzy vdeku.");
                 Pis("Mackas tlacitko KATAPULT. Kapsle se se zableskem vymrstuje k hladine.");
                 Pis("Zustavas sam v zaplavene mistnosti na dne sveta.");
-                Pis("Steny se rzpadaji, voda se vali dovnitr. Tvoje obvody zhasinaji.");
+                Pis("Steny se rozpadaji a voda se vali dovnitr. Tvoje obvody zhasinaji.");
                 Pis("Zemrel jsi jako stroj, ale udelal jsi to nejlidstejsi rozhodnuti.");
             }
             else if (volba == 2)
@@ -260,7 +287,7 @@ namespace HlubinnyProtokol
                 Pis("Tvoje roboticke paže bez problemu srazi Viktora na zem. Vlezl jsi dovnitr a zamkl.");
                 Pis("Katapult te vystreluje do temnoty oceanu. Stoupas stovky metru za vterinu.");
                 Pis("Na hladine tvuj modul vylovi zachranna flotila.");
-                Pis("Kdyz ale vojaci otevrou poklop a uvidi misto cloveka cizi cerny hardware,");
+                Pis("Kdyz ale vojaci otevrou poklop a uvidi misto cloveka cizi hardware,");
                 Pis("okamzite te oznacuji za bio-hrozbu a tvuj modul putuje rovnou do spalovny.");
             }
             else if (volba == 3)
@@ -271,7 +298,7 @@ namespace HlubinnyProtokol
                 Pis("Z cele sily zarazis pacidlo do obvodu kapsle. Draty exploduji jiskrami.");
                 Pis("Viktor propada hysterii, ale ty vis, co je v sazce.");
                 Pis("Cerny sliz a Tvarovac se nikdy nesmi dostat na povrch k lidem.");
-                Pis("Strop se trha a miliardy litru ledoveho oceanu smetou vse do vecne temnoty.");
+                Pis("Strop se trha a ledovy ocean smete vse do vecne temnoty.");
                 Pis("Zabranil jsi infekci sveta za cenu vlastnich existenci.");
             }
             else
@@ -286,43 +313,19 @@ namespace HlubinnyProtokol
             UkonciHru();
         }
 
-        // Pomocna metoda na pomalejsi psani textu (simuluje konzoli/stroj)
         static void Pis(string text)
         {
             foreach (char c in text)
             {
                 Console.Write(c);
-                Thread.Sleep(16); // 16 ms na pismeno = hezke cteni a pridava cas
+                Thread.Sleep(15);
             }
             Console.WriteLine();
         }
 
-        static void Cekej(int ms)
+        static bool ZkontrolujKonecCasu(Hrac hrac)
         {
-            Thread.Sleep(ms);
-        }
-
-        // Vykresleni zbyvajiciho casu a textoveho ukazatele
-        static void VykresliStatus()
-        {
-            int zbyva = maxSekundy - (int)(DateTime.Now - casStartu).TotalSeconds;
-            if (zbyva < 0) zbyva = 0;
-
-            int carky = Math.Max(0, zbyva / 15); // ukazatel na 16 carek
-
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write("[STAV STANICE: ");
-            for (int i = 0; i < carky; i++) Console.Write("#");
-            for (int i = carky; i < 16; i++) Console.Write("-");
-            Console.WriteLine(" | ZBYVA: " + zbyva + "s]");
-            Console.ResetColor();
-            Console.WriteLine(new string('=', 55));
-        }
-
-        // Kontrola casoveho limitu
-        static bool ZkontrolujCas()
-        {
-            if ((DateTime.Now - casStartu).TotalSeconds >= maxSekundy)
+            if (hrac.VyprselCas())
             {
                 Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Red;
