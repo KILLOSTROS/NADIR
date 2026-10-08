@@ -6,7 +6,7 @@ Projekt je vyvíjen v jazyce **C# (.NET)**
 
 ---
 
-## 📖 O příběhu
+## Příběh
 
 Hráč se probouzí u servisního terminálu ve výzkumné stanici *PATHOS-B* v hloubce 8 200 metrů pod hladinou oceánu. Tlaková stěna nevydržela nápor a do úplného zaplavení a imploze sektoru zbývá necelých **4 minut (240 sekund)**. 
 
@@ -14,7 +14,7 @@ Při snaze o únik přes zaplavené koridory se hráč spojí s technikem Viktor
 
 ---
 
-## 🎮 Herní prvky
+## Herní prvky
 
 * **Reálný časový tlak:** Hra běží na reálném časovači, který průběžně sleduje ubíhající čas. Pokud hráč nestihne únik v limitu, stanice imploduje.
 * **Větvení příběhu:** Rozhodnutí ovlivňují vztah s přeživším, stav vybavení i zbývající čas do kolapsu.
@@ -29,7 +29,7 @@ Při snaze o únik přes zaplavené koridory se hráč spojí s technikem Viktor
 
 ---
 
-## 🛠️ Požadavky
+## Požadavky
 
 * [.NET SDK](https://dotnet.microsoft.com/download) (verze 8.0 nebo novější)
 * Terminál / Příkazový řádek podporující ANSI barvy
