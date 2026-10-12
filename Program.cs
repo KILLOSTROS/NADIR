@@ -6,6 +6,8 @@ namespace HlubinnyProtokol
     public class Hrac
     {
         public string Identifikator { get; set; }
+        public int Zdravi { get; set; }
+        public bool MaMedkit { get; set; }
         public bool ViZeJeRobot { get; set; }
         public bool ViktorVeri { get; set; }
         public bool MaSvetlici { get; set; }
@@ -16,12 +18,33 @@ namespace HlubinnyProtokol
         public Hrac(string id, int limitSekund)
         {
             Identifikator = id;
+            Zdravi = 100;
+            MaMedkit = false;
             ViZeJeRobot = false;
             ViktorVeri = false;
             MaSvetlici = true;
             GeneratorSpusten = false;
             CasStartu = DateTime.Now;
             MaxSekundy = limitSekund;
+        }
+
+        public void Zranit(int hodnota)
+        {
+            Zdravi -= hodnota;
+            if (Zdravi < 0) Zdravi = 0;
+        }
+
+        public void PouzitMedkit()
+        {
+            if (MaMedkit)
+            {
+                Zdravi += 35;
+                if (Zdravi > 100) Zdravi = 100;
+                MaMedkit = false;
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[POUZIT MEDKIT: Zdravi doplneno na {Zdravi} %]");
+                Console.ResetColor();
+            }
         }
 
         public void UberCas(int sekundy)
@@ -37,7 +60,7 @@ namespace HlubinnyProtokol
             int carky = Math.Max(0, zbyva / 15);
 
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write($"[POSTAVA: {Identifikator} | INTEGRITA: ");
+            Console.Write($"[POSTAVA: {Identifikator} | HP: {Zdravi}% | INTEGRITA: ");
             for (int i = 0; i < carky; i++) Console.Write("#");
             for (int i = carky; i < 16; i++) Console.Write("-");
             Console.WriteLine($" | ZBYVA: {zbyva}s]");
@@ -47,7 +70,7 @@ namespace HlubinnyProtokol
 
         public bool VyprselCas()
         {
-            return (DateTime.Now - CasStartu).TotalSeconds >= MaxSekundy;
+            return (DateTime.Now - CasStartu).TotalSeconds >= MaxSekundy || Zdravi <= 0;
         }
     }
 
@@ -135,8 +158,23 @@ namespace HlubinnyProtokol
             hrac.VykresliStatus();
             Pis("Vybihas do spojovaci chodby. Cestu do dalsi sekce ale blokuji masivni ocelova vrata.");
             Pis("Konzole hlasi: 'ZADEJTE 4-MISTNY PRISTUPOVY KOD DOHLIZITELE'.");
-            Pis("Vedle lezi mrtvy technik s odznakem 'Dr. Vance' a jeho osobni zapisnik.");
+            Pis("Vedle lezi mrtvy technik s odznakem 'Dr. Vance' a otevrena zachranna schranka.");
             Pis("V zapisniku je text: 'Kdybych zapomnel kod k sektoru B: Je to rok narozeni me dcery (1994).'");
+
+            Console.WriteLine("\nVedle tela lezi armadni medkit.");
+            Console.WriteLine("1 - Sebrat medkit");
+            Console.WriteLine("2 - Nechat ho byt a jit rovnou ke konzoli");
+            Console.Write("\nTvoje volba (1-2): ");
+            int volbaMedkit = 0;
+            int.TryParse(Console.ReadLine(), out volbaMedkit);
+
+            if (volbaMedkit == 1)
+            {
+                hrac.MaMedkit = true;
+                Console.ForegroundColor = ConsoleColor.Green;
+                Pis("[ZISKANO: Zdravotnicky balicek (Medkit)]");
+                Console.ResetColor();
+            }
 
             Console.Write("\nZadej pristupovy kod z terminalu: ");
             string kod = Console.ReadLine();
@@ -188,10 +226,23 @@ namespace HlubinnyProtokol
             else if (volba == 2)
             {
                 hrac.GeneratorSpusten = true;
+                hrac.Zranit(25);
                 Console.ForegroundColor = ConsoleColor.Red;
                 Pis("Jiskry letaji po cele mistnosti! Transformator hvizdi.");
+                Pis("[POSKOZENI: Vyboj ti zpusobil poskozeni integrity (-25 HP)]");
                 Console.ResetColor();
-                Pis("Energie naskocila okamzite, ale exploze kabelu ti poskodila cast senzoru.");
+                Pis("Energie naskocila, ale tvoje mechanika utrpela sok.");
+
+                if (hrac.MaMedkit)
+                {
+                    Console.WriteLine("\nMas v inventari medkit. Chces ho pouzit? (1 - Ano / 2 - Ne)");
+                    int pouzit = 0;
+                    int.TryParse(Console.ReadLine(), out pouzit);
+                    if (pouzit == 1)
+                    {
+                        hrac.PouzitMedkit();
+                    }
+                }
             }
             else
             {
@@ -228,7 +279,21 @@ namespace HlubinnyProtokol
                 }
                 else
                 {
-                    Pis("Viktor v panice slapl na plech! Monstrum zarvalo, ale stihli jste vbehnout do vrat.");
+                    hrac.Zranit(20);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Pis("Viktor v panice slapl na plech! Monstrum seklo a zasahlo te (-20 HP)!");
+                    Console.ResetColor();
+                    Pis("Stihli jste vbehnout do vrat.");
+                    if (hrac.MaMedkit)
+                    {
+                        Console.WriteLine("\nChces pouzit medkit na osetreni ran? (1 - Ano / 2 - Ne)");
+                        int pouzit = 0;
+                        int.TryParse(Console.ReadLine(), out pouzit);
+                        if (pouzit == 1)
+                        {
+                            hrac.PouzitMedkit();
+                        }
+                    }
                 }
             }
             else if (volba == 2)
@@ -330,10 +395,10 @@ namespace HlubinnyProtokol
                 Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write("\a");
-                Pis("=== KONEC 5: CAS VYPRSEL ===");
+                Pis("=== KONEC: STRATA INTEGRITY / VYPRSENI CASU ===");
                 Console.ResetColor();
-                Pis("Nestihl jsi dobehnout vcas. Tlak 8 200 metru oceanu rozmackal celou stanici.");
-                Pis("Kov byl rozdrcen behem zlomku vteriny.");
+                Pis("Stav tveho tela nebo stanice dosahl kriticke meze.");
+                Pis("Oceán a tlak dokoncily destrukci.");
                 UkonciHru();
                 return true;
             }
